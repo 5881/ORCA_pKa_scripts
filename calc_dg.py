@@ -12,11 +12,19 @@ import os,sys
 ORCA=os.path.expanduser('~')+"/orca/orca"
 REPORTFILE="energy_report_file.csv"
 SOLVENT="DMSO"
-MAXCORE="15000"
-NPROC="16"
+MAXCORE="11000"
+NPROC="22"
+CONTINUE=True
 #Для DLPNO выставляется отдельно тк метод капризный
-MAXCORE_DLPNOCCSDT="16000"
-NPROC_DLPNOCCSDT="15"
+MAXCORE_DLPNOCCSDT="11000"
+NPROC_DLPNOCCSDT="22"
+
+def output_terminate_status(outputfile):
+	with open(outputfile, 'r') as out_file:
+		for s in out_file:
+			if '****ORCA TERMINATED NORMALLY****' in s:
+				return True
+	return False
 
 def output_singlepoint_analyse(outputfile):
 	E=0
@@ -65,6 +73,7 @@ def copyfile(src, dst):
 	os.system(cmd)
 	
 def pbeh3c_opt(xyzfile):
+	RUN=True
 	job="_pbeh3c_opt"
 	basename=xyzfile.replace('.xyz', '').rsplit('_')[0]
 	basename=basename+job
@@ -79,7 +88,15 @@ def pbeh3c_opt(xyzfile):
 	if(os.path.isdir(dirname) is False):
 		os.mkdir(dirname)
 	os.chdir(dirname)
-	if(os.path.isfile(outputfile) is False):
+	
+	if(os.path.isfile(outputfile) is True):
+		if(output_terminate_status(outputfile) is False):
+			if(CONTINUE is True): xyz=getxyz_from_file(xyzoutputfile)
+			#cmd='find . -not -name "'+xyzoutputfile+'" -delete'
+			os.system("rm *")
+		else: RUN=False
+	
+	if(RUN is True):
 		inputfilecontent="""
 %pal nprocs NPROC end
 %maxcore MAXCORE
@@ -97,14 +114,15 @@ def pbeh3c_opt(xyzfile):
 			print("*",file=inp_file)
 		orcacmd=ORCA+" "+inpfile+"|tee "+outputfile
 		os.system(orcacmd)
-		os.chdir("..")
-		outputfile=dirname+"/"+outputfile
-	else:
-		os.chdir("..")
+		
+	
+	os.chdir("..")
+	outputfile=dirname+"/"+outputfile
 	xyzfile=dirname+"/"+xyzoutputfile
-	return xyzfile
+	return outputfile,xyzfile
 
 def b3lyp_d3bj_finalopt_freq_solv(xyzfile):
+	RUN=True
 	job="_b3lyp_d3bj_tzvp_optfreq"
 	basename=xyzfile.replace('.xyz', '').rsplit('_')[0]
 	basename=basename+job
@@ -119,7 +137,14 @@ def b3lyp_d3bj_finalopt_freq_solv(xyzfile):
 	if(os.path.isdir(dirname) is False):
 		os.mkdir(dirname)
 	os.chdir(dirname)
-	if(os.path.isfile(outputfile) is False):
+	if(os.path.isfile(outputfile) is True):
+		if(output_terminate_status(outputfile) is False):
+			if(CONTINUE is True): xyz=getxyz_from_file(xyzoutputfile)
+			#cmd='find . -not -name "'+xyzoutputfile+'" -delete'
+			os.system("rm *")
+		else: RUN=False
+	
+	if(RUN is True):
 		inputfilecontent="""
 %pal nprocs NPROC end
 %maxcore MAXCORE
@@ -137,14 +162,16 @@ def b3lyp_d3bj_finalopt_freq_solv(xyzfile):
 			print("*",file=inp_file)
 		orcacmd=ORCA+" "+inpfile+"|tee "+outputfile
 		os.system(orcacmd)
-		os.chdir("..")
-	else:
-		os.chdir("..")
+		#os.chdir("..")
+	
+	
+	os.chdir("..")
 	xyzfile=dirname+"/"+xyzoutputfile
 	outputfile=dirname+"/"+outputfile
 	return outputfile,xyzfile
 
 def ri_mp2_singlepoint_solv(xyzfile):
+	RUN=True
 	job="_rimp2_matzvp_solv"
 	basename=xyzfile.replace('.xyz', '').rsplit('_')[0]
 	basename=basename+job
@@ -159,7 +186,13 @@ def ri_mp2_singlepoint_solv(xyzfile):
 	if(os.path.isdir(dirname) is False):
 		os.mkdir(dirname)
 	os.chdir(dirname)
-	if(os.path.isfile(outputfile) is False):
+	
+	if(os.path.isfile(outputfile) is True):
+		if(output_terminate_status(outputfile) is False): 
+			os.system("rm *")
+		else: RUN=False
+	
+	if(RUN is True):
 		inputfilecontent="""
 %pal nprocs NPROC end
 %maxcore MAXCORE
@@ -187,14 +220,14 @@ end
 			print("*",file=inp_file)
 		orcacmd=ORCA+" "+inpfile+"|tee "+outputfile
 		os.system(orcacmd)
-		os.chdir("..")
-	else:
-		os.chdir("..")
+	
+	os.chdir("..")
 	#xyzfile=dirname+"/"+xyzoutputfile
 	outputfile=dirname+"/"+outputfile
 	return outputfile
 
 def dlpno_ccsdt_singlepoint_solv(xyzfile):
+	RUN=True
 	job="_dlpnoccsdt_matzvp_solv"
 	basename=xyzfile.replace('.xyz', '').rsplit('_')[0]
 	basename=basename+job
@@ -209,7 +242,12 @@ def dlpno_ccsdt_singlepoint_solv(xyzfile):
 	if(os.path.isdir(dirname) is False):
 		os.mkdir(dirname)
 	os.chdir(dirname)
-	if(os.path.isfile(outputfile) is False):
+	if(os.path.isfile(outputfile) is True):
+		if(output_terminate_status(outputfile) is False): 
+			os.system("rm *")
+		else: RUN=False
+	
+	if(RUN is True):
 		inputfilecontent="""
 %pal nprocs NPROC end
 %maxcore MAXCORE
@@ -237,9 +275,8 @@ end
 			print("*",file=inp_file)
 		orcacmd=ORCA+" "+inpfile+"|tee "+outputfile
 		os.system(orcacmd)
-		os.chdir("..")
-	else:
-		os.chdir("..")
+	
+	os.chdir("..")
 	#xyzfile=dirname+"/"+xyzoutputfile
 	outputfile=dirname+"/"+outputfile
 	return outputfile
@@ -256,8 +293,10 @@ dmso_b3lyp_d3bj_tzvp_optfreq.xyz, 1, -553.12829837, 0.0508621, -552.59076969229,
 
 
 for xyzinputfile in sys.argv[1:]:
-	stepxyzfile=pbeh3c_opt(xyzinputfile)
+	stepoutputfile,stepxyzfile=pbeh3c_opt(xyzinputfile)
+	if(output_terminate_status(stepoutputfile) is False): continue
 	stepoutputfile,stepxyzfile=b3lyp_d3bj_finalopt_freq_solv(stepxyzfile)
+	if(output_terminate_status(stepoutputfile) is False): continue
 	E, G, G_el, geom_ok=output_freq_analyse(stepoutputfile)
 	stepoutputfile=ri_mp2_singlepoint_solv(stepxyzfile)
 	EMP2=output_singlepoint_analyse(stepoutputfile)

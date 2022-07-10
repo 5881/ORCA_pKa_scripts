@@ -4,8 +4,8 @@ import os,sys
 ORCA=os.path.expanduser('~')+"/orca/orca"
 REPORTFILE="opt_report_file.csv"
 SOLVENT="DMSO"
-MAXCORE="15000"
-NPROC="16"
+MAXCORE="11000"
+NPROC="22"
 
 def output_singlepoint_analyse(outputfile):
 	E=0
@@ -145,9 +145,10 @@ if(os.path.isfile(REPORTFILE) is False):
 
 
 for xyzinputfile in sys.argv[1:]:
+	xyzoutputfile=xyzinputfile
 	xyzinputfile=gfnxtb_opt(xyzinputfile)
 	optxyzfile, outputfile=pbeh3c_opt(xyzinputfile)
 	E=output_singlepoint_analyse(outputfile)
 	with open(REPORTFILE, 'a') as reportfile:
 		print(optxyzfile.rsplit('/')[-1],E,sep=', ',file=reportfile)
-	copyfile(optxyzfile, xyzinputfile)
+	copyfile(optxyzfile, xyzoutputfile)
